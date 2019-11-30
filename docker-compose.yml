@@ -1,0 +1,43 @@
+version: "3.7"
+
+services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile.prod
+    image: shaldnikita/shaldnikita-ru-nginx
+    container_name: marketplace-nginx
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - frontend
+      - backend
+    restart: always
+
+  frontend:
+    image: itsreactive/market
+    container_name: marketplace-frontend
+    restart: always
+
+  backend:
+    image: shaldnikita/marketplace
+    container_name: marketplace-backend
+    tty: true
+    stdin_open: true
+    restart: always
+    depends_on:
+      - postgresql
+    command: bash -c 'while !</dev/tcp/postgresql/5432; do sleep 1; done; java -Dspring.profiles.active=docker -jar /app/marketplace.jar'
+
+  postgresql:
+    image: postgres:9.6.8
+    tty: true
+    stdin_open: true
+    restart: always
+    environment:
+      POSTGRES_DB: sr
+      POSTGRES_USER: sr
+      POSTGRES_PASSWORD: sr
+    volumes:
+      - ./postgres-data-srs:/var/lib/postgresql/data
